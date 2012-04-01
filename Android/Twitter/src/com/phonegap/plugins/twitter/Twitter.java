@@ -1,7 +1,8 @@
 package com.phonegap.plugins.twitter;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -19,22 +20,36 @@ import com.phonegap.api.PluginResult;
  * Twitter plugin for Android
  * Inspired of the iOS plugin: https://github.com/phonegap/phonegap-plugins/tree/master/iPhone/Twitter
  * 
+ * @see http://regis.decamps.info/blog/2011/06/intent-to-open-twitter-client-on-android/
+ * @see http://blogrescue.com/2011/12/android-development-send-tweet-action/
+ * 
  * @author Julien Roche
  * @version 1.0
  */
 public class Twitter extends Plugin {
 	// Constants
 	/** ComposeTweet method's name */
-	private static String METHOD_COMPOSE_TWEET = "composeTweet";
+	private static final String METHOD_COMPOSE_TWEET = "composeTweet";
 	
 	/** IsTwitterAvailable method's name */
-	private static String METHOD_IS_TWITTER_AVAILABLE = "isTwitterAvailable";
+	private static final String METHOD_IS_TWITTER_AVAILABLE = "isTwitterAvailable";
 	
-	/** Twitter's post activity */
-	private static String TWITTER_POST_ACTIVITY = "com.twitter.android.PostActivity";
+	/** List of Twitter's applications with theirs linked send Activity */
+	private static Map<String, String> TWITTER_APPS;
 	
 	/** List of available methods */
-	private static String[] AVAILABLE_METHODS = new String[]{ METHOD_COMPOSE_TWEET, METHOD_IS_TWITTER_AVAILABLE };
+	private static final String[] AVAILABLE_METHODS = new String[]{ METHOD_COMPOSE_TWEET, METHOD_IS_TWITTER_AVAILABLE };
+	
+	static {
+		TWITTER_APPS = new LinkedHashMap<String, String>();
+		TWITTER_APPS.put("Twitter", 		"com.twitter.android.PostActivity");
+		TWITTER_APPS.put("TweetCaster", 	"com.handmark.tweetcaster.NewTwitActivity");
+		TWITTER_APPS.put("UberSocial", 		"com.twidroid.activity.SendTweet");
+		TWITTER_APPS.put("TweetDeck", 		"com.tweetdeck.compose.ComposeActivity");
+		TWITTER_APPS.put("Seesmic", 		"com.seesmic.ui.Composer");
+		TWITTER_APPS.put("Plume", 			"com.levelup.touiteur.appwidgets.TouiteurWidgetNewTweet");
+		TWITTER_APPS.put("Twicca", 			"jp.r246.twicca.statuses.Send");
+	}
 	
 	/**
 	 * @param args
@@ -63,11 +78,14 @@ public class Twitter extends Plugin {
 		
 		final ActivityInfo activity = resolveInfo.activityInfo;
         final ComponentName name = new ComponentName(activity.applicationInfo.packageName, activity.name);
+        String p = resolveInfo.activityInfo.packageName;
+        
         Intent intent = new Intent(Intent.ACTION_SEND);
+    	intent.putExtra(Intent.EXTRA_TEXT, message);
+    	intent.setType(p != null && p.startsWith("com.twidroid") ? "application/twitter" : "text/plain");
         intent.addCategory(Intent.CATEGORY_LAUNCHER);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
         intent.setComponent(name);
-        intent.putExtra(Intent.EXTRA_TEXT, message);
         this.ctx.startActivity(intent);
 		
         return new PluginResult(PluginResult.Status.OK);
@@ -100,19 +118,17 @@ public class Twitter extends Plugin {
 	public ResolveInfo getTwitterResolveInfo() {
 		try{
 			Intent intent = new Intent(Intent.ACTION_SEND);
-		    intent.putExtra(Intent.EXTRA_TEXT, "a simple message");
+			intent.putExtra(Intent.EXTRA_TEXT, "Test; please ignore");
 		    intent.setType("text/plain");
 		    
 		    final PackageManager pm = this.ctx.getPackageManager();
-		    final List<ResolveInfo> activityList = pm.queryIntentActivities(intent, 0);
-		    int len =  activityList.size();
-		    
-		    for (int i = 0; i < len; i++) {
-		        final ResolveInfo app = activityList.get(i);
-		        if (TWITTER_POST_ACTIVITY.equals(app.activityInfo.name)) {
-		            return app;
-		        }
+		    for(ResolveInfo resolveInfo: pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)){
+		    	ActivityInfo activity = resolveInfo.activityInfo;
+				if (TWITTER_APPS.containsValue(activity.name)) {
+					return resolveInfo;
+				}
 		    }
+		    
 		}
 		finally {
 			
