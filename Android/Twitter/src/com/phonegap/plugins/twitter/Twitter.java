@@ -44,6 +44,7 @@ public class Twitter extends Plugin {
 		TWITTER_APPS = new LinkedHashMap<String, String>();
 		TWITTER_APPS.put("Twitter", 		"com.twitter.android.PostActivity");
 		TWITTER_APPS.put("TweetCaster", 	"com.handmark.tweetcaster.NewTwitActivity");
+		TWITTER_APPS.put("TweetCaster2", 	"com.handmark.tweetcaster.ShareSelectorActivity");
 		TWITTER_APPS.put("UberSocial", 		"com.twidroid.activity.SendTweet");
 		TWITTER_APPS.put("TweetDeck", 		"com.tweetdeck.compose.ComposeActivity");
 		TWITTER_APPS.put("Seesmic", 		"com.seesmic.ui.Composer");
